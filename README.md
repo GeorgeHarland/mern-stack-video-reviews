@@ -3,4 +3,4 @@
 Does not include:
 - node_modules
 - .env
-- package-lock
+- package-lock.json
