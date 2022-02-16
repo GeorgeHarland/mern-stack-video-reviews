@@ -1,6 +1,11 @@
+import mongodb from "mongodb"
+import ReviewsController from "../api/reviews.controller.js"
+
+const ObjectId = mongodb.ObjectId
 let movies
 
 export default class MoviesDAO{
+
     static async injectDB(conn){
         if(movies){
             return
@@ -13,6 +18,7 @@ export default class MoviesDAO{
             console.error(`Unable to connect to MoviesDAO: ${e}`)
         }
     } 
+
     static async getMovies({ // default filter object
         filters = null,
         page = 0,
@@ -43,4 +49,39 @@ export default class MoviesDAO{
         }
 
     }
+
+    static async getRatings() {
+        let ratings = []
+        try {
+            ratings = await movies.distinct("rated")
+            return ratings
+        } catch(e) {
+            console.error(`Unable to get ratings, $(e)`)
+            return ratings
+        }
+    }
+
+    static async getMovieById(id) {
+        try {
+            return await movies.aggregate([
+                {
+                    $match: {
+                        _id: new ObjectId(id)
+                    }
+                }   ,
+                { $lookup:
+                    {
+                        from: 'reviews',
+                        localField: '_id',
+                        foreignField: 'movie_id',
+                        as: 'reviews'
+                    }
+                }
+            ]).next()
+        } catch(e) {
+            console.error(`Error in getMovieById: ${e}`)
+            throw e
+        }
+    }
+
 }
